@@ -6,7 +6,6 @@ import pickle
 from sympy import symbols
 from sympy import sympify
 
-import resultsReader
 import routes
 
 def possiblePatternsGenerator():
