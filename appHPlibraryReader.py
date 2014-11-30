@@ -15,8 +15,8 @@ elif (answer=='y'):
 else:
     print('??')
     import HPlibraryReader
-libraryChoice=raw_input('Please choose library: short(s),medium(m),long(l) ')
-seqChoice=HPlibraryReader.libraryChoicer(route,libraryChoice)
+#libraryChoice=libraries/#raw_input('Please choose library: short(s),medium(m),long(l) ')
+seqChoice='libraries/'#HPlibraryReader.libraryChoicer(route,libraryChoice)
 path=route+seqChoice
 
 catClasses=generators.classesGenerator()
