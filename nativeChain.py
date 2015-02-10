@@ -1,9 +1,7 @@
-#! /usr/bin/python2
+#! /usr/bin/python
 
 import sys
 import coordinate
-
-sys.path.append("/data/research/06.origins_of_life/codes/hp-model")
 
 def HP2Bin(HPstring):
     """Convert a string of type 'HPHPHPPPHHP' to a string of 1s and 0s.""" 
@@ -18,56 +16,41 @@ def HP2Bin(HPstring):
 
 class NativeChain(object):
     """
+    NativeChain(hpstring,vector,nativeEnergy)
     An object to represent the 2D HP lattice chain's sequence, conformation and free energy
     """ 
-    def __init__(self,hpstring):
+    __slots__ = ['hpstring','n','vec','coordinates','nativeEnergy','generatedNumber','subPattern','catPattern']
+    def __init__(self,hpstring,vector,nativeEnergy):
         self.hpstring = hpstring.upper()  # The HP sequence as a string
         self.n = len(self.hpstring)                 # the chain length
-        self.vec = ''                      # an (n-1)-dimensional vector representation of the chain
-        self.coordinates=[]
-        self.nativeEnergy=None
+        self.vec = vector.upper()                      # an (n-1)-dimensional vector representation of the chain
+        self.coordinates=self.vec2coords()
+        self.nativeEnergy=int(nativeEnergy)
         self.generatedNumber=None
-        self.ifSub=None
-        self.substratePattern=None
-        self.ifCat=None
-        self.catalystPattern=None
-        self.Type=None
-        self.hpbinary = self.hpstr2bin()                # The HP seq in binary rep (H=1 P=0)
+        self.subPattern=self.findPattern('subPattern')
+        self.catPattern=self.findPattern('catPattern')
         
-        # The chain is represented by an (n-1)-dimensional vector, which is stored in a python list.
-        # Each element represents the direction of successive links (bonds) along the chain length:
-        #
-        #     U     up
-        #     R     right
-        #     D     down
-        #     L     left
-        #
-        # By convention, the first monomer (bead) in the chain is fixed at the origin on
-        # a two-dimensional square lattice.
-
-        
+      
         
     def __repr__(self):
         if self.vec==[]:
-            return "#%d, n=%d, %s: vector isn't determined" % (self.generatedNumber, self.n, self.hpstring)
+            return "vector isn't determined"
         else:
-            line1="#%d, n=%d, %s: %s" % (self.generatedNumber, self.n, self.hpstring, self.vec)
-            line2="\n Sub: "+str(self.substratePattern)+" Cat: "+str(self.catalystPattern)
+            line1='#'+str(self.generatedNumber)+' '+self.hpstring+' with nat.energy '+str(self.nativeEnergy)+'\n'
+            line2="Sub: "+str(self.subPattern)+" Cat: "+str(self.catPattern)+" Vec: "+self.vec+'\n'
             return line1+line2
     
     def __str__(self):
         if self.vec==[]:
-            return "#%d, n=%d, %s: vector isn't determined" % (self.generatedNumber, self.n, self.hpstring)
+            return "vector isn't determined"
         else:
-            line1="#%d, n=%d, %s: %s" % (self.generatedNumber, self.n, self.hpstring, self.vec)
-            line2="\n Sub: "+str(self.substratePattern)+" Cat: "+str(self.catalystPattern)
+            line1='#'+str(self.generatedNumber)+' '+self.hpstring+' with nat.energy '+str(self.nativeEnergy)+'\n'
+            line2="Sub: "+str(self.subPattern)+" Cat: "+str(self.catPattern)+" Vec: "+self.vec
             return line1+line2
           
-###From here changed to Class attributes    
-    #Comments
     def vec2coords(self):
         """Convert a list of chain vectors to a list of coordinates (duples).""" 
-        tmp = [coordinate.Coordinate((0,0))]
+        coordList = [coordinate.Coordinate((0,0))]
         x = 0
         y = 0
         if self.vec==[]:
@@ -82,13 +65,11 @@ class NativeChain(object):
                     y = y - 1
                 if self.vec[i] == 'L':
                     x = x - 1
-                tmp.append(coordinate.Coordinate((x,y)))
-        return tmp
+                coordList.append(coordinate.Coordinate((x,y)))
+        return coordList
 
 
 
-    ###
-###Comments, debugging
 
     def allContactFinder(self):
         allContacts=[]
@@ -115,8 +96,7 @@ class NativeChain(object):
 ###Comments, debugging
     #Returns the list of coordinates of the surface of a given sequence
     
-    def surfaceConnector(self):
-        #First, looking for the all points contacting a given sequence
+    def surfaceConnector(self):#First, looking for the all points contacting a given sequence
         allContacts=self.allContactFinder()
         #Here will be a list of surface coordinates in the order, in which one can walk the whole surface around with only allowedSteps
         surfaceCoordinates=[]
@@ -155,8 +135,7 @@ class NativeChain(object):
         return hList
 
     #Finds coordinates of the free cells contacting hydrophobes            
-    def hContactFinder(self):
-        #hList is the list of all H's in the sequence
+    def hContactFinder(self):#hList is the list of all H's in the sequence
         hList=self.hCoordFinder()
         hContactList=[]
         #For every H in sequence
@@ -174,8 +153,7 @@ class NativeChain(object):
         return hContactList
 ###Comments, debugging
     #From the coordinates of the hydrophobes and all surface coordinates calculates surface sequence
-    def surfaceSequenceMaker(self):
-        #Get the list of coordinates of the surface of a given sequence
+    def surfaceSequenceMaker(self):#Get the list of coordinates of the surface of a given sequence
         surfaceCoordinates=self.surfaceConnector()
         #Find H-contacting coordinates
         hContactList=self.hContactFinder()
@@ -194,52 +172,37 @@ class NativeChain(object):
                 
         return surfaceSequence
 
-    #Comments, debugging
-    def ifCatalyst(self,catClassesHnP):#!!!Change all dependencies!!!
-        surfaceSeq=self.surfaceSequenceMaker()
-        for pattern in catClassesHnP:
-            if (surfaceSeq+surfaceSeq).find(pattern)>-1:
-                answer = (True, pattern)
-                break
-            else: 
-                answer = (False,'')
+
+    def findPattern(self,whatPattern):
+        '''
+        NativeChain, string (cases) -> string (cases)
+        determines if a given type of pattern present in the sequence
+        whatPattern: 
+         - 'catPattern'
+         - 'subPattern'
+         it returns:
+         -the pattern, if the pattern present
+         -'N', if not
+        '''
+        if whatPattern=='catPattern':
+            sequence=self.surfaceSequenceMaker()*2
+        elif whatPattern=='subPattern':
+            sequence=self.hpstring
+        for i in range(8,1,-1):
+            pat = 'H'*i #pattern is sequence of 'H' of length i
+            if not sequence.find(pat)==-1:
+                #print('pattern found and length is '+str(len(pat)))
+                #print('looking for '+whatPattern+' in '+self.hpstring+' with '+sequence)
+                #print(' ')
+                if whatPattern=='catPattern' and len(pat)<3:
+                    answer = 'N'
+                else:
+                    return pat
+            
+            else:
+                answer = 'N'
+        
         return answer
-    
-    #def ifCatalystBin(self,catClasses):#!!!Change all dependencies!!!
-        #surfaceSeq=HP2Bin(self.surfaceSequenceMaker())
-        #print surfaceSeq
-        #for pattern in catClasses:
-            #if (surfaceSeq+surfaceSeq).find(pattern)>-1:
-                #answer = (True, pattern)
-                #print answer
-                #break
-            #else: 
-                #answer = (False,'')
-        #return answer
-
-    #def nativeToCatalyst(self):
-        #if self.ifCatalyzer()[0]:
-            #ct=Catalyzer(self)
-            #ct.catalyzerClass=self.ifCatalyzer()[1]
-        #return ct
-
-    def ifSubstrate(self,subClasses):#TEST BUG?
-        for pattern in subClasses:
-            if (self.hpstring).find(pattern)>-1:
-                answer = (True, pattern)
-                break
-            else: 
-                answer = (False,'')
-        return answer
-
-
-
-
-#   
-
-
-
-
-
+            
 
 
