@@ -2,5 +2,5 @@
 from localRt import rt as localRoute
 route=localRoute
 routePDM=localRoute+'pdmmod/'
-routeHP=routePDM+'hp-model-scripts/'
+routeHP='hp2/hp-polymerization/'
 routeResults=routePDM+'sim-results/'
