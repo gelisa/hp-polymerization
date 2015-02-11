@@ -87,8 +87,8 @@ def print2File(nativeList,filename):
     
     return None
 
-nativeList=HPlibrary2sequencesList(12)
-print2File(nativeList,routePDM+'nativeList12.txt')
+nativeList=HPlibrary2sequencesList(25)
+print2File(nativeList,routeHP+'nativeList25.txt')
 
  
  
